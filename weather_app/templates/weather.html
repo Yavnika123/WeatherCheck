@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" integrity="sha512-PgQMlq+nqFLV4ylk1gwUOgm6CtIIXkKwaIHp/PAIWHzig/lKZSEGKEysh0TCVbHJXCLN7WetD8TFecIky75ZfQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <title>Weather App</title>
+
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  
+    <div class="container-fluid main_menu">
+        <div class="row">
+            <div class="col-md-10 col-12 mx-auto">
+                <nav class="navbar navbar-expand-lg">
+                    <a class="navbar-brand" href="#">WeatherCheck</a>
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav ml-auto">
+                            <li class="nav-item active">
+                                <a class="nav-link" href="{% url 'index' %}">Home <span class="sr-only">(current)</span></a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'weather' %}">Weather</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'about' %}">About</a>
+
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- main header -->
+    <div class="container-fluid main_header">
+        <div class="row">
+            <div class="col-md-10 col-12 mx-auto">
+
+                <div class="main_content">
+                    <form class="temp_form">
+                        <input type="text" id="cityname" placeholder="Enter your city name" autocomplete="off">
+                        <input type="submit" value="search" id="submitbtn">
+                    </form>
+                </div>
+
+                <div class="tempInformation">
+                    <div class="top_layer">
+                        <p id="day">Wednesday</p>
+                        <p id="today_date">14 JUNE</p>
+                    </div>
+
+                    <div class="main_layer">
+                        <p id="city_name">Get Output Here</p>
+                        <div class="middle_layer data_hide">
+                            <p id="temp"><span>0</span> <sup>o</sup>C</p>
+                            <p id="temp_status"><i class="fa fa-cloud" aria-hidden="true"></i></p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- footer code-->
+    <footer>
+        <p>created by technica</p>
+    </footer>
+<!-- jQuery library -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+
+<!-- Popper JS -->
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JavaScript code for fetching weather data (to be added here) -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+          const form = document.querySelector('.temp_form');
+          const cityNameInput = document.getElementById('cityname');
+          const submitBtn = document.getElementById('submitbtn');
+          const dayElement = document.getElementById('day');
+          const dateElement = document.getElementById('today_date');
+          const cityElement = document.getElementById('city_name');
+          const tempElement = document.getElementById('temp');
+          const tempStatusElement = document.getElementById('temp_status');
+
+          form.addEventListener('submit', function (e) {
+              e.preventDefault();
+              const cityName = cityNameInput.value.trim();
+
+              // Fetch weather data using API
+              fetchWeatherData(cityName);
+          });
+
+          async function fetchWeatherData(cityName) {
+              try {
+                  const apiKey = '59df23788166a01b65d4c6226fb04c98'; // Replace with your actual API key from OpenWeatherMap
+                  const apiURL = `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}&units=metric`;
+
+                  const response = await fetch(apiURL);
+                  const data = await response.json();
+
+                  if (data.cod === '404') {
+                      // City not found
+                      cityElement.textContent = 'City not found';
+                      tempElement.innerHTML = '<span>---</span> <sup>o</sup>C';
+                      tempStatusElement.innerHTML = '<i class="fa fa-exclamation-circle" aria-hidden="true"></i>';
+                      dayElement.textContent = '';
+                      dateElement.textContent = '';
+                      return;
+                  }
+
+                  // Update weather information
+                  const temperature = data.main.temp;
+                  const description = data.weather[0].description;
+                  const iconCode = data.weather[0].icon;
+
+                  cityElement.textContent = cityName;
+                  tempElement.innerHTML = `<span>${temperature}</span> <sup>o</sup>C`;
+                  tempStatusElement.innerHTML = getWeatherIconHTML(iconCode);
+                  dayElement.textContent = getDayOfWeek();
+                  dateElement.textContent = getCurrentDate();
+              } catch (error) {
+                  console.error('Error fetching weather data:', error);
+              }
+          }
+
+          function getWeatherIconHTML(iconCode) {
+              return `<i class="fa ${getWeatherIconClass(iconCode)}" aria-hidden="true"></i>`;
+          }
+
+          function getWeatherIconClass(iconCode) {
+              // Map weather icon codes to corresponding Font Awesome icon classes
+              const iconMap = {
+                  '01d': 'fa-sun',
+                  '01n': 'fa-moon',
+                  '02d': 'fa-cloud-sun',
+                  '02n': 'fa-cloud-moon',
+                  '03d': 'fa-cloud',
+                  '03n': 'fa-cloud',
+                  '04d': 'fa-cloud',
+                  '04n': 'fa-cloud',
+                  '09d': 'fa-cloud-showers-heavy',
+                  '09n': 'fa-cloud-showers-heavy',
+                  '10d': 'fa-cloud-sun-rain',
+                  '10n': 'fa-cloud-moon-rain',
+                  '11d': 'fa-bolt',
+                  '11n': 'fa-bolt',
+                  '13d': 'fa-snowflake',
+                  '13n': 'fa-snowflake',
+                  '50d': 'fa-smog',
+                  '50n': 'fa-smog'
+              };
+              return iconMap[iconCode] || 'fa-question'; // Default to question icon if iconCode is unknown
+          }
+
+          function getDayOfWeek() {
+              const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+              const now = new Date();
+              return days[now.getDay()];
+          }
+
+          function getCurrentDate() {
+              const now = new Date();
+              const date = now.getDate();
+              const month = now.toLocaleString('default', { month: 'short' });
+              return `${date} ${month.toUpperCase()}`;
+          }
+      });
+  </script>
+
+</body>
+</html>
